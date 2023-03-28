@@ -152,7 +152,7 @@ EOF
     inline = [
       <<EOF
 ansible-galaxy collection install community.general:6.4.0 ansible.posix:1.5.1
-ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -vvvv -i inventory volume-mount.yml --extra-vars volume_size="${local.tang.volume_size}"
+ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -vvvv -i inventory volume-mount.yml --extra-vars volume_size="${local.tang.volume_size}" --extra-vars device_name="$(lsblk -rno NAME,MOUNTPOINT,FSTYPE | awk '$2=="" && $3=="" {print "/dev/"$1}')"
 EOF
     ]
   }
