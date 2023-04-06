@@ -124,6 +124,7 @@ module "nbde" {
   connection_timeout          = var.connection_timeout
   ssh_agent                   = var.ssh_agent
   private_network_mtu         = var.private_network_mtu
+  cluster_id   = var.cluster_id == "" ? random_id.label[0].hex : (var.cluster_id_prefix == "" ? var.cluster_id : "${var.cluster_id_prefix}-${var.cluster_id}")
 }
 
 locals {

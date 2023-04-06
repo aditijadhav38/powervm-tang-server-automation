@@ -313,3 +313,5 @@ variable "fips_compliant" {
   description = "Set to true to enable usage of FIPS for the deployment."
   default     = false
 }
+
+variable "cluster_id_prefix" {}

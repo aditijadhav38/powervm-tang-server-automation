@@ -81,7 +81,7 @@ locals {
     volume_size = local.tang.volume_size
     disk_name = "sdb"
 }
-  storage_path = "/var/db/tang"
+#  storage_path = "/var/db/tang"
 }
 
 resource "null_resource" "tang_setup" {
@@ -129,6 +129,11 @@ resource "null_resource" "tang_setup" {
     destination = "remove-subscription.yml"
   }
 
+  provisioner "file" {
+    source      = "${path.cwd}/modules/2_nbde/files/volume-mount.yml"
+    destination = "volume-mount.yml"
+  }
+
   # Added quotes to avoid globbing issues in the extra-vars
   provisioner "remote-exec" {
     when = create
@@ -155,31 +160,21 @@ EOF
     ]
   }
 
-#  provisioner "remote-exec" {
-#    when = create
-#    inline = [
-#      <<EOF
-#ansible-galaxy collection install community.general:6.4.0 ansible.posix:1.5.1
-#ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -vvvv -i inventory volume-mount.yml --extra-vars volume_size="${local.tang.volume_size}" --extra-vars device_name="$(lsblk -rno NAME,MOUNTPOINT,FSTYPE | awk '$2=="" && $3=="" {print "/dev/"$1}')"
-#EOF
-#    ]
-# }
+  provisioner "remote-exec" {
+    when = create
+    inline = [
+      <<EOF
+ansible-galaxy collection install community.general:6.4.0 ansible.posix:1.5.1
+sudo chmod +x /tmp/create_disk_link.sh
+# Fix for copying file from Windows OS having CR,
+sudo sed -i 's/\r//g' /tmp/create_disk_link.sh
+sudo /tmp/create_disk_link.sh
 
-   provisioner "remote-exec" {
-     when = create
-     inline = [
-      "sudo rm -rf mkdir ${local.storage_path}; sudo mkdir -p ${local.storage_path}; sudo chmod -R 755 ${local.storage_path}",
-      "sudo chmod +x /tmp/create_disk_link.sh",
-      # Fix for copying file from Windows OS having CR,
-      "sudo sed -i 's/\r//g' /tmp/create_disk_link.sh",
-      "sudo /tmp/create_disk_link.sh",
-      "yes | sudo parted /dev/${local.disk_config.disk_name} mkpart primary ext4 0 ${local.disk_config.volume_size}GB",
-      "sudo mkfs.ext4 /dev/${local.disk_config.disk_name}",
-      "MY_DEV_UUID=$(sudo blkid -o export /dev/${local.disk_config.disk_name} | awk '/UUID/{ print }')",
-      "echo \"$MY_DEV_UUID ${local.storage_path} ext4 defaults 0 0\" | sudo tee -a /etc/fstab > /dev/null",
-      "sudo mount ${local.storage_path}",
-     ]
-   }
+ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -vvvv -i inventory volume-mount.yml --extra-vars volume_size="${local.tang.volume_size}" --extra-vars disk_name="${local.disk_config.disk_name}"
+
+EOF
+    ]
+ }
 
   # destroy optimistically destroys the subscription (if it fails, and it can it pipes to true to shortcircuit)
   provisioner "remote-exec" {

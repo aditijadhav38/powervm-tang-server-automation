@@ -10,17 +10,17 @@
         recurse: yes
     - name: create partition
       parted:
-        device: "{{ device_name }}"
+        device: "/dev/{{ disk_name }}"
         number: 1
         flags: [ lvm ]
         state: present
         part_end: "{{ volume_size }}GB"
     - name: format the partition
       shell: |
-        sudo mkfs.ext4 "{{ device_name }}"
+        sudo mkfs.ext4 "/dev/{{ disk_name }}"
     - name: mount the lv on /var/db/tang
       mount:
         path: /var/db/tang
-        src: "{{ device_name }}"
+        src: "/dev/{{ disk_name }}"
         fstype: ext4
         state: mounted
